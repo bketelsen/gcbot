@@ -170,8 +170,12 @@ func NewDiscord(c *Config) *Discord {
 				}
 				var roles []string
 				for _, ticket := range alltix {
+					if strings.Contains(ticket.TicketType, "orkshop") {
+						roles = append(roles, "GC20 Workshop")
+					}
 					role := TicketRole[ticket.TicketType]
 					roles = append(roles, role)
+
 					if ticket.PromoCode != "" {
 						sponsorRoles := database.GetPromoRoles(ticket.PromoCode)
 						if len(sponsorRoles) > 0 {
@@ -257,7 +261,7 @@ func (d *Discord) PresenceUpdate(s *discordgo.Session, m *discordgo.PresenceUpda
 	if m.User.ID == "480240313525600267" {
 		return
 	}
-	fmt.Println(m.User.ID, m.Status)
+	go d.ReconcileWorkshops(s, m)
 	greeted, err := database.Greeted(m.User.ID)
 	if err != nil {
 		fmt.Println(err)
@@ -273,6 +277,47 @@ func (d *Discord) PresenceUpdate(s *discordgo.Session, m *discordgo.PresenceUpda
 		fmt.Println("Sending a greeting to ", m.User.ID)
 		d.Greet(m.User)
 	}
+
+}
+
+// ReconcileWorkshops adds the GC20 Workshop role to people who should have had it
+func (d *Discord) ReconcileWorkshops(s *discordgo.Session, m *discordgo.PresenceUpdate) {
+
+	d.logAction("reconciling roles for ", m.User.ID)
+	member, err := d.session.GuildMember(d.config.GetGopherGuild(), m.User.ID)
+	if err != nil {
+		d.logAction("error getting guild member", err.Error())
+		return
+	}
+
+	var hasWorkshop bool
+	var hasGC20Workshop bool
+	for _, r := range member.Roles {
+		for _, gr := range d.GuildRoles {
+			if gr.ID == r {
+				if gr.Name[0:2] == "Wo" {
+					hasWorkshop = true
+					d.logAction("workshop found for", m.User.ID)
+				}
+				if gr.ID == "763773702415450173" {
+					d.logAction("GC20 Workshop role found for", m.User.ID)
+					hasGC20Workshop = true
+					return
+				}
+
+			}
+		}
+	}
+	if hasWorkshop && !hasGC20Workshop {
+		err = s.GuildMemberRoleAdd(d.config.GetGopherGuild(), m.User.ID, "763773702415450173")
+		if err != nil {
+			d.logAction("error adding gc20 guild role to user", m.User.ID, err.Error())
+			return
+		}
+		d.logAction("GC20 Workshop added to", m.User.ID)
+	}
+
+	return
 
 }
 
