@@ -170,10 +170,10 @@ func NewDiscord(c *Config) *Discord {
 				}
 				var roles []string
 				for _, ticket := range alltix {
-					if strings.Contains(ticket.TicketType, "orkshop") {
+					if strings.Contains(ticket.TicketType, "orkshop") || strings.Contains(ticket.TicketType, "ctions") {
 						roles = append(roles, "GC20 Workshop")
 					}
-					role := TicketRole[ticket.TicketType]
+					role := TicketRole[strings.TrimSpace(ticket.TicketType)]
 					roles = append(roles, role)
 
 					if ticket.PromoCode != "" {
