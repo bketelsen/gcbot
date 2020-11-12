@@ -368,7 +368,7 @@ func (d *Discord) MessageCreate(s *discordgo.Session, m *discordgo.MessageCreate
 		return
 	}
 	for _, rr := range m.MentionRoles {
-		if rr == d.role.ID {
+		if rr == d.role.ID && strings.HasPrefix(m.Content, fmt.Sprintf("<@!%s>", d.role.ID)) {
 			// get the raw content
 			// now try to process this command
 			d.logAction("processing @mention command: ", c)
