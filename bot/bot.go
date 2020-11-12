@@ -488,7 +488,7 @@ func (d *Discord) RunSchedule(quit chan bool) {
 	}
 	c := cron.New()
 	for _, m := range sm {
-        schedMsg := m
+		schedMsg := m
 		d.logAction("adding", schedMsg.Cron, schedMsg.Message)
 		c.AddFunc(schedMsg.Cron, func() {
 			d.logAction("executing cron trigger", schedMsg.Cron, schedMsg.Message)
